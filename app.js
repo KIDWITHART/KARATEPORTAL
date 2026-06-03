@@ -9787,8 +9787,12 @@ let isSyncingFromSupabase = false;
 
 // Initialize Supabase on application load
 function initSupabaseOnLoad() {
-  const url = localStorage.getItem('supabase_url');
-  const key = localStorage.getItem('supabase_key');
+  const defaultUrl = 'https://tcmqgwpgrbohrqkkdgko.supabase.co';
+  const defaultKey = 'sb_publishable_CngZ5fNyKcznjVHfPvYULQ_w3OEACY0';
+
+  const isDisabled = localStorage.getItem('supabase_disabled') === 'true';
+  const url = isDisabled ? null : (localStorage.getItem('supabase_url') || defaultUrl);
+  const key = isDisabled ? null : (localStorage.getItem('supabase_key') || defaultKey);
   
   // Populate UI inputs if keys exist
   const urlInput = document.getElementById('settings-supabase-url');
@@ -10048,6 +10052,7 @@ async function connectSupabase() {
     return;
   }
   
+  localStorage.removeItem('supabase_disabled');
   const success = await setupSupabaseClient(url, key, false);
   if (!success) {
     localStorage.removeItem('supabase_url');
@@ -10063,6 +10068,7 @@ function disconnectSupabase() {
   supabaseClient = null;
   supabaseChannel = null;
   
+  localStorage.setItem('supabase_disabled', 'true');
   localStorage.removeItem('supabase_url');
   localStorage.removeItem('supabase_key');
   
