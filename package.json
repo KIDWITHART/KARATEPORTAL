@@ -1,0 +1,11 @@
+{
+  "name": "karate-portal",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "serve . -p 3000"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}

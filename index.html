@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Scheduler & Bracket Manager</title>
+  <meta name="description" content="A premium tournament management platform for scheduling karate games, generating interactive brackets, live tatami tracking, and leaderboard rankings.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Supabase CDN Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <img id="logo-icon-img" src="logo.png" style="width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 50%;">
+          <svg id="logo-icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+            <!-- Karate Fist SVG -->
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM9.5 16.5C8.67 16.5 8 15.83 8 15C8 14.17 8.67 13.5 9.5 13.5C10.33 13.5 11 14.17 11 15C11 15.83 10.33 16.5 9.5 16.5ZM9.5 12.5C8.67 12.5 8 11.83 8 11C8 10.17 8.67 9.5 9.5 9.5C10.33 9.5 11 10.17 11 11C11 11.83 10.33 12.5 9.5 12.5ZM14.5 16.5C13.67 16.5 13 15.83 13 15C13 14.17 13.67 13.5 14.5 13.5C15.33 13.5 16 14.17 16 15C16 15.83 15.33 16.5 14.5 16.5ZM14.5 12.5C13.67 12.5 13 11.83 13 11C13 10.17 13.67 9.5 14.5 9.5C15.33 9.5 16 10.17 16 11C16 11.83 15.33 12.5 14.5 12.5Z" fill="white"/>
+          </svg>
+        </div>
+        <div>
+          <span class="logo-text" id="logo-main-text" style="font-size: 1.2rem;">ASSAM <span style="color: var(--primary);">KARATE</span></span>
+          <span class="logo-sub" id="logo-sub-text" style="color: var(--accent);">Association</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <li class="nav-item active" data-view="dashboard-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            Dashboard
+          </a>
+        </li>
+        <li class="nav-item" data-view="fighters-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+            Fighters & Divisions
+          </a>
+        </li>
+        <li class="nav-item" data-view="brackets-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24"><path d="M19 15v4H5v-4h14m1-2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 5v4h10V5H7m11-2H6c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1z"/></svg>
+            Brackets
+          </a>
+        </li>
+        <li class="nav-item" data-view="scheduler-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/></svg>
+            Scheduler (Tatami)
+          </a>
+        </li>
+        <li class="nav-item" data-view="rankings-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6.29-6.3 4 4 6.3-6.29L22 12V6z"/></svg>
+            Leaderboard
+          </a>
+        </li>
+        <li class="nav-item" data-view="winners-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+            Winners Podium
+          </a>
+        </li>
+        <li class="nav-item" data-view="credentials-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm6 12H6v-1.5c0-1.99 4-3 6-3s6 1.01 6 3V18z"/>
+            </svg>
+            ID Credentials
+          </a>
+        </li>
+        <li class="nav-item" data-view="settings-view">
+          <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            Settings
+          </a>
+        </li>
+      </nav>
+
+      <div id="sidebar-admin-card-container" style="width: 100%; margin-top: auto; margin-bottom: 0.75rem;">
+        <!-- Logged Out State -->
+        <div id="sidebar-guest-card" style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); width: 100%; text-align: center;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Guest Mode (Read Only)</span>
+          <button id="sidebar-login-btn" class="btn btn-secondary btn-sm" style="width: 100%; height: 32px; font-size: 0.78rem; font-weight: 700; justify-content: center; gap: 0.35rem; border-color: rgba(124, 58, 237, 0.3); background: rgba(124, 58, 237, 0.05); color: #c084fc;">
+            🔒 Sensei Login
+          </button>
+        </div>
+        
+        <!-- Logged In State (Initially Hidden) -->
+        <div id="sidebar-admin-card" style="display: none; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); width: 100%; position: relative;">
+          <div class="admin-avatar-wrapper" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); flex-shrink: 0;">
+            <img id="sidebar-admin-avatar" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+            <svg id="sidebar-admin-avatar-placeholder" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--text-muted);"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <div style="line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">
+            <span id="sidebar-admin-name" style="font-weight: 700; font-size: 0.82rem; display: block; color: var(--text-main); overflow: hidden; text-overflow: ellipsis;">Sensei Admin</span>
+            <span id="sidebar-admin-role" style="font-size: 0.68rem; color: var(--accent); font-weight: 600;">Tournament Host</span>
+          </div>
+          <button id="sidebar-logout-btn" style="background: transparent; border: none; cursor: pointer; color: #ef4444; padding: 0.25rem; display: flex; align-items: center; justify-content: center;" title="Log Out / Lock Console">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <button id="theme-switcher-btn" class="btn btn-secondary" style="width: 100%; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; padding: 0.55rem; font-size: 0.8rem; border: 1px solid var(--border-color);">
+        <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
+      </button>
+
+      <div class="sidebar-footer" style="padding-top: 0;">
+        <p>Tournament Suite v1.0.0</p>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem;">Made for Champions</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- ================= DASHBOARD VIEW ================= -->
+      <section id="dashboard-view" class="view-section active">
+        <!-- Event Large Premium Banner -->
+        <div id="dashboard-event-banner-container" class="dashboard-banner-card" style="position: relative; width: 100%; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: flex-end; min-height: 200px; padding: 2rem; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+          <!-- Background image placeholder (dynamically set in app.js) -->
+          <div id="dashboard-banner-bg-img" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; z-index: 1; filter: brightness(0.55); opacity: 0; transition: opacity 0.5s ease-in-out;"></div>
+          
+          <div style="position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-end; width: 100%; flex-wrap: wrap; gap: 1rem;">
+            <div style="text-shadow: 0 2px 10px rgba(0,0,0,0.6);">
+              <span id="dashboard-banner-date-badge" style="background: var(--accent); color: #fff; font-weight: 800; font-size: 0.72rem; text-transform: uppercase; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); letter-spacing: 0.05em; display: inline-block; margin-bottom: 0.75rem;">May 25, 2026</span>
+              <h1 id="dashboard-banner-title" style="font-family: var(--font-title); font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; color: #ffffff; letter-spacing: -0.02em; line-height: 1.1;">Championship Tournament</h1>
+              <p id="dashboard-banner-details" style="color: rgba(255,255,255,0.9); font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+                <span id="dashboard-banner-location">📍 Tokyo Budokan, JP</span>
+                <span style="opacity: 0.65;">•</span>
+                <span id="dashboard-banner-time"></span>
+              </p>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; position: relative; z-index: 3;">
+              <button class="btn btn-secondary" id="dashboard-export-report-btn" style="border: 1px solid rgba(16, 185, 129, 0.4); background: rgba(0, 0, 0, 0.4); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Export Report
+              </button>
+              <button class="btn btn-primary" id="dashboard-setup-demo-btn" style="box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Load Demo Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="glass-card stat-widget" id="widget-total-fighters" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(124, 58, 237, 0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-total-fighters">0</div>
+              <div class="stat-label">Total Fighters</div>
+            </div>
+          </div>
+
+          <div class="glass-card stat-widget" id="widget-total-categories" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(124, 58, 237, 0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-total-categories">0</div>
+              <div class="stat-label">Divisions / Categories</div>
+            </div>
+          </div>
+
+          <div class="glass-card stat-widget" id="widget-scheduled-matches" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(124, 58, 237, 0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 15.17l7.59-7.59L19 9l-9 9z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-scheduled-matches">0</div>
+              <div class="stat-label">Scheduled Matches</div>
+            </div>
+          </div>
+
+          <div class="glass-card stat-widget" id="widget-completed-matches" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(124, 58, 237, 0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <div class="stat-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-completed-matches">0</div>
+              <div class="stat-label">Completed Matches</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Settings Card -->
+        <div class="glass-card event-config-card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
+          <h3 style="margin-bottom: 0.35rem; font-family: var(--font-title); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main);">
+            🏆 Event Setup & Branding
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.78rem; margin-bottom: 1rem; line-height: 1.4;">
+            Manage multiple independent karate tournaments, switch between existing events, customize branding parameters, and upload brand assets.
+          </p>
+          
+          <!-- Event Switcher & Manager Row -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-grow: 1;">
+              <label class="form-label" for="event-switcher-select" style="margin-bottom: 0; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); white-space: nowrap;">Active Event:</label>
+              <select id="event-switcher-select" class="form-control" style="max-width: 320px; margin-bottom: 0; font-weight: 600;"></select>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-download-event-json" style="height: 38px; font-size: 0.8rem; padding: 0 1rem; display: flex; align-items: center; gap: 0.35rem; border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; background: rgba(16, 185, 129, 0.05);" title="Download tournament backups">
+                <span>💾</span> Backup JSON
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-create-event" style="height: 38px; font-size: 0.8rem; padding: 0 1rem; display: flex; align-items: center; gap: 0.35rem;">
+                <span>➕</span> Create Event
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-update-event" style="height: 38px; font-size: 0.8rem; padding: 0 1rem; display: flex; align-items: center; gap: 0.35rem; background: linear-gradient(135deg, var(--secondary), var(--primary)); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);" title="Update and save event details">
+                <span>🔄</span> Update Event
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-delete-event" style="height: 38px; font-size: 0.8rem; padding: 0 1rem; display: flex; align-items: center; gap: 0.35rem; border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; background: rgba(239, 68, 68, 0.05);">
+                <span>🗑️</span> Delete Active
+              </button>
+            </div>
+          </div>
+
+          <!-- Organizer Credentials Input Row -->
+          <div class="branding-grid-row-4">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-event-name-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Main Event Name</label>
+              <input type="text" id="dashboard-event-name-input" class="form-control" placeholder="Championship Tournament" style="margin-bottom: 0;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-admin-name-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Organizer Admin Name</label>
+              <input type="text" id="dashboard-admin-name-input" class="form-control" placeholder="Sensei Admin" style="margin-bottom: 0;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-admin-title-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Admin Title / Role</label>
+              <input type="text" id="dashboard-admin-title-input" class="form-control" placeholder="Tournament Host" style="margin-bottom: 0;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-event-prefix-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Custom ID Prefix</label>
+              <input type="text" id="dashboard-event-prefix-input" class="form-control" placeholder="e.g. K" maxlength="10" style="margin-bottom: 0;">
+            </div>
+          </div>
+
+          <!-- Event Metadata Row (Date, Location, Time) -->
+          <div class="branding-grid-row-3">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-event-date-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Event Date</label>
+              <input type="text" id="dashboard-event-date-input" class="form-control" placeholder="e.g. May 25, 2026" style="margin-bottom: 0;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-event-location-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Event Location</label>
+              <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <input type="text" id="dashboard-event-location-input" class="form-control" placeholder="e.g. Tokyo Budokan, JP" style="margin-bottom: 0; flex-grow: 1;">
+                <button type="button" class="btn btn-secondary" id="btn-open-location-map-modal" style="padding: 0 0.75rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); height: 42px; width: 46px; border-radius: var(--radius-md); font-size: 1.1rem; flex-shrink: 0;" title="Select Location from Google Map">
+                  📍
+                </button>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="dashboard-event-time-input" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Event Time</label>
+              <input type="text" id="dashboard-event-time-input" class="form-control" placeholder="e.g. 09:00 AM" style="margin-bottom: 0;">
+            </div>
+          </div>
+
+          <!-- Brand Logo & Banner Uploaders -->
+          <div class="branding-grid-row-3 align-end">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Event Brand Logo</label>
+              <button type="button" class="btn btn-secondary btn-sm" id="dashboard-event-logo-btn" style="width: 100%; font-size: 0.75rem; justify-content: center; height: 42px; border: 1px dashed var(--border-color);">
+                Upload Brand Logo
+              </button>
+              <input type="file" id="dashboard-event-logo-input" accept="image/*" style="display: none;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Admin Avatar Photo</label>
+              <button type="button" class="btn btn-secondary btn-sm" id="dashboard-admin-photo-btn" style="width: 100%; font-size: 0.75rem; justify-content: center; height: 42px; border: 1px dashed var(--border-color);">
+                Upload Photo
+              </button>
+              <input type="file" id="dashboard-admin-photo-input" accept="image/*" style="display: none;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Tournament Banner Photo</label>
+              <button type="button" class="btn btn-secondary btn-sm" id="dashboard-event-banner-btn" style="width: 100%; font-size: 0.75rem; justify-content: center; height: 42px; border: 1px dashed var(--border-color);">
+                Upload Banner Photo
+              </button>
+              <input type="file" id="dashboard-event-banner-input" accept="image/*" style="display: none;">
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-content-grid">
+          <!-- Live/Recent Matches -->
+          <div class="glass-card recent-activities">
+            <div class="sub-header">
+              <h3>Active / Recent Games</h3>
+              <span class="activity-badge" style="background: rgba(124, 58, 237, 0.15); color: #c084fc;">Matches</span>
+            </div>
+            <div class="activity-list" id="dashboard-match-list">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4H6v2h12V4zm0 6H6v2h12v-2zm0 6H6v2h12v-2z"/></svg>
+                <p>No matches running currently. Generate brackets and assign scheduled games to see them here.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="glass-card quick-actions-panel">
+            <h3>Quick Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+              <button class="btn btn-primary" id="qa-add-fighter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Add New Fighter
+              </button>
+              <button class="btn btn-secondary" id="qa-add-category">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Create Category
+              </button>
+              <button class="btn btn-accent" id="qa-go-bracket">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Manage Brackets
+              </button>
+              <button class="btn btn-secondary" id="qa-go-scheduler" style="border: 1px solid rgba(79, 70, 229, 0.3);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Tatami Timelines
+              </button>
+            </div>
+          </div>
+
+          <!-- ================= NEW INTERACTIVE HOME SCREEN HUB ================= -->
+          <div class="glass-card interactive-hub-card" style="grid-column: span 2; margin-top: 1.5rem; padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 style="font-family: var(--font-title); font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                  🥋 Interactive Roster & Schedule Explorer
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.15rem;">Monitor competitors, explore generated categories, and track matches in real-time.</p>
+              </div>
+              <!-- Hub Tabs Controls -->
+              <div class="tab-btn-wrapper" style="display: flex; gap: 0.35rem; background: rgba(0, 0, 0, 0.2); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <button type="button" class="btn btn-sm hub-tab-btn active" data-hub-tab="hub-fighters" style="height: 32px; font-size: 0.78rem; padding: 0 0.85rem; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">Competitors</button>
+                <button type="button" class="btn btn-sm hub-tab-btn" data-hub-tab="hub-divisions" style="height: 32px; font-size: 0.78rem; padding: 0 0.85rem; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">Divisions</button>
+                <button type="button" class="btn btn-sm hub-tab-btn" data-hub-tab="hub-matches" style="height: 32px; font-size: 0.78rem; padding: 0 0.85rem; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">All Matches</button>
+              </div>
+            </div>
+
+            <!-- Tab Content: Fighters -->
+            <div id="hub-tab-content-hub-fighters" class="hub-tab-content active">
+              <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="hub-fighter-search" class="form-control" placeholder="🔍 Search fighter by name, club, or belt..." style="max-width: 320px; height: 38px; font-size: 0.85rem; margin-bottom: 0;">
+                <select id="hub-fighter-belt-filter" class="form-control" style="max-width: 180px; font-size: 0.85rem; margin-bottom: 0;">
+                  <option value="">All Belts</option>
+                  <option value="white">White Belt</option>
+                  <option value="yellow">Yellow Belt</option>
+                  <option value="orange">Orange Belt</option>
+                  <option value="green">Green Belt</option>
+                  <option value="blue">Blue Belt</option>
+                  <option value="purple">Purple Belt</option>
+                  <option value="brown">Brown Belt</option>
+                  <option value="black">Black Belt</option>
+                </select>
+              </div>
+              <div style="overflow-x: auto; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <table class="rankings-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                  <thead>
+                    <tr>
+                      <th style="padding: 0.75rem 1rem;">Fighter</th>
+                      <th style="padding: 0.75rem 1rem;">Dojo / Club</th>
+                      <th style="padding: 0.75rem 1rem;">Belt</th>
+                      <th style="padding: 0.75rem 1rem;">Division Category</th>
+                      <th style="padding: 0.75rem 1rem; text-align: center;">Wins</th>
+                      <th style="padding: 0.75rem 1rem; text-align: center;">Losses</th>
+                      <th style="padding: 0.75rem 1rem; text-align: center;">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hub-fighters-list-body">
+                    <tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No competitors registered yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab Content: Divisions -->
+            <div id="hub-tab-content-hub-divisions" class="hub-tab-content" style="display: none;">
+              <div class="dashboard-grid" id="hub-divisions-grid-list" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                <div class="empty-state" style="grid-column: 1 / -1;"><p>No divisions registered yet.</p></div>
+              </div>
+            </div>
+
+            <!-- Tab Content: Matches -->
+            <div id="hub-tab-content-hub-matches" class="hub-tab-content" style="display: none;">
+              <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap;">
+                <select id="hub-match-status-filter" class="form-control" style="max-width: 220px; font-size: 0.85rem; margin-bottom: 0;">
+                  <option value="all">All Match Statuses</option>
+                  <option value="scheduled">Scheduled Matches</option>
+                  <option value="live">Live Matches</option>
+                  <option value="completed">Completed Matches</option>
+                </select>
+                <select id="hub-match-division-filter" class="form-control" style="max-width: 250px; font-size: 0.85rem; margin-bottom: 0;">
+                  <option value="all">All Divisions</option>
+                </select>
+              </div>
+              <div style="overflow-x: auto; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <table class="rankings-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                  <thead>
+                    <tr>
+                      <th style="padding: 0.75rem 1rem;">Match #</th>
+                      <th style="padding: 0.75rem 1rem;">Division</th>
+                      <th style="padding: 0.75rem 1rem;">Mat</th>
+                      <th style="padding: 0.75rem 1rem;">🔴 Aka (Red Side)</th>
+                      <th style="padding: 0.75rem 1rem; text-align: center;">Score</th>
+                      <th style="padding: 0.75rem 1rem; text-align: center;">Score</th>
+                      <th style="padding: 0.75rem 1rem;">🔵 Ao (Blue Side)</th>
+                      <th style="padding: 0.75rem 1rem;">Status</th>
+                      <th style="padding: 0.75rem 1rem; text-align: center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hub-matches-list-body">
+                    <tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">No matches scheduled yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FIGHTERS & CATEGORIES VIEW ================= -->
+      <section id="fighters-view" class="view-section">
+        <div class="header-panel">
+          <div class="header-title-area">
+            <h1>Fighters & <span class="gradient-text">Divisions</span></h1>
+            <p>Create tournament categories and assign competitors into weight/age classes.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" id="view-import-csv-btn" style="border: 1px solid rgba(16, 185, 129, 0.3);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              Import CSV
+            </button>
+            <button class="btn btn-secondary" id="view-add-category-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              + Category
+            </button>
+            <button class="btn btn-primary" id="view-add-fighter-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              + Fighter
+            </button>
+          </div>
+        </div>
+
+        <div class="categories-container">
+          <!-- Left side: Category navigation list -->
+          <div class="glass-card category-list-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="margin: 0;">Divisions</h3>
+              <button class="btn btn-secondary btn-sm" id="btn-clean-empty-categories" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); color: #f87171; font-size: 0.72rem; padding: 0.2rem 0.5rem; display: flex; align-items: center; gap: 0.25rem;" title="Delete All Divisions with 0 Fighters">
+                🗑️ Clean Empty
+              </button>
+            </div>
+            <div class="category-items" id="categories-pill-list">
+              <!-- Dynamically populated pills -->
+            </div>
+          </div>
+
+          <!-- Right side: Fighter roster in active category -->
+          <div class="glass-card" style="flex-grow: 1;">
+            <div class="sub-header">
+              <h3 id="fighter-list-category-title">All Registered Fighters</h3>
+              <span class="category-badge-count" id="fighter-list-count" style="font-size: 0.85rem; padding: 0.25rem 0.75rem;">0 Fighters</span>
+            </div>
+            <div class="fighters-grid" id="fighters-grid-list">
+              <!-- Dynamically populated card blocks -->
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <p>No fighters registered yet in this division. Add a new fighter or load the demo dataset to begin.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= BRACKETS VIEW ================= -->
+      <section id="brackets-view" class="view-section">
+        <!-- Event Large Premium Banner (Brackets Page) -->
+        <div id="bracket-event-banner-container" class="dashboard-banner-card" style="position: relative; width: 100%; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: flex-end; min-height: 160px; padding: 1.75rem; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+          <!-- Background image placeholder (dynamically set in app.js) -->
+          <div id="bracket-banner-bg-img" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; z-index: 1; filter: brightness(0.55); opacity: 0; transition: opacity 0.5s ease-in-out;"></div>
+          
+          <div style="position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-end; width: 100%; flex-wrap: wrap; gap: 1rem;">
+            <div style="text-shadow: 0 2px 10px rgba(0,0,0,0.6);">
+              <span id="bracket-banner-date-badge" style="background: var(--accent); color: #fff; font-weight: 800; font-size: 0.72rem; text-transform: uppercase; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); letter-spacing: 0.05em; display: inline-block; margin-bottom: 0.5rem;">May 25, 2026</span>
+              <h1 id="bracket-banner-title" style="font-family: var(--font-title); font-size: 1.75rem; font-weight: 800; margin-bottom: 0.35rem; color: #ffffff; letter-spacing: -0.02em; line-height: 1.2; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span id="bracket-banner-breadcrumb" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 1.25rem;">
+                  <span id="bracket-banner-event-name" style="color: rgba(255,255,255,0.7);">Event Name</span>
+                  <span style="color: rgba(255,255,255,0.45); font-weight: 400;">&gt;</span>
+                  <span id="bracket-banner-division-name" style="color: var(--text-main);">Select Division</span>
+                  <span style="color: rgba(255,255,255,0.45); font-weight: 400;">&gt;</span>
+                  <span id="bracket-banner-winner-name" style="color: var(--gold);">Winner: -</span>
+                </span>
+              </h1>
+              <p id="bracket-banner-details" style="color: rgba(255,255,255,0.9); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; margin-top: 0.15rem;">
+                <span id="bracket-banner-location">📍 Tokyo Budokan, JP</span>
+                <span style="opacity: 0.65;">•</span>
+                <span id="bracket-banner-time"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card brackets-section-container">
+          <div class="bracket-category-select">
+            <span class="form-label" style="margin-bottom: 0;">Select Division:</span>
+            <select class="form-control" id="bracket-division-select" style="max-width: 250px;">
+              <!-- Categories dropdown list -->
+            </select>
+            <button class="btn btn-primary" id="bracket-generate-btn">
+              Generate Bracket
+            </button>
+            <button class="btn btn-primary" id="bracket-generate-all-btn" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+              Generate All Brackets
+            </button>
+            <button class="btn btn-secondary" id="bracket-add-fighter-btn" style="border: 1px solid rgba(124, 58, 237, 0.3); background: rgba(124, 58, 237, 0.05); color: #a78bfa; display: flex; align-items: center; gap: 0.25rem;">
+              <span>➕</span> Add Competitor
+            </button>
+            <button class="btn btn-secondary" id="bracket-schedule-match-btn" style="border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); color: #34d399; display: flex; align-items: center; gap: 0.25rem;">
+              <span>➕</span> Add Custom Match
+            </button>
+            <button class="btn btn-secondary" id="bracket-reset-btn">
+              Reset Bracket
+            </button>
+            <button class="btn btn-accent" id="bracket-jpg-btn" style="border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); color: #34d399;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              Export Draw Sheets (JPG)
+            </button>
+          </div>
+
+          <!-- Bracket view canvas viewport -->
+          <div class="bracket-viewport">
+            <div id="bracket-tree-container" class="bracket-tree">
+              <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M19 15v4H5v-4h14m1-2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 5v4h10V5H7m11-2H6c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1z"/></svg>
+                <p>Select a karate division with at least 2 fighters and click "Generate Bracket" to view tournament trees.</p>
+                <button class="btn btn-secondary btn-sm" id="bracket-empty-add-fighter-btn" style="margin-top: 0.75rem; border: 1px solid rgba(124, 58, 237, 0.3); display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <span>➕</span> Add Competitor to Division
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SCHEDULER VIEW ================= -->
+      <section id="scheduler-view" class="view-section">
+        <div class="header-panel">
+          <div class="header-title-area">
+            <h1>Tatami <span class="gradient-text">Scheduler</span></h1>
+            <p>Allocate active games to specific combat areas (Tatamis) and manage live match updates.</p>
+          </div>
+          <button class="btn btn-primary" id="scheduler-add-match-btn">
+            + Schedule Game
+          </button>
+        </div>
+
+        <div class="scheduler-grid">
+          <div class="glass-card scheduler-controls" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-weight: 600; color: var(--text-muted); font-size: 0.9rem;">Sort & Timings:</span>
+              <span style="font-size: 0.85rem; color: var(--text-main); margin-left: 0.5rem;">Allocated chronological timeline</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary btn-sm" id="scheduler-auto-assign-btn">
+                Auto Assign Matches to Tatami
+              </button>
+              <button class="btn btn-accent btn-sm" id="scheduler-manage-tatamis-btn" style="border: 1px solid rgba(16, 185, 129, 0.3);">
+                Manage Tatamis
+              </button>
+            </div>
+          </div>
+
+          <!-- Tatami Mat Lanes -->
+          <div class="tatami-container" id="tatami-mats-container">
+            <!-- Tatami Mat 1 -->
+            <div class="tatami-lane tatami-1" id="tatami-lane-1">
+              <div class="tatami-header">
+                <span class="tatami-title">
+                  <span class="tatami-dot"></span>
+                  Tatami 1 (Mat 1)
+                </span>
+                <span class="category-badge-count" id="tatami-count-1">0 matches</span>
+              </div>
+              <div class="tatami-card-list" id="tatami-list-1">
+                <!-- Dynamically assigned scheduled matches -->
+              </div>
+            </div>
+
+            <!-- Tatami Mat 2 -->
+            <div class="tatami-lane tatami-2" id="tatami-lane-2">
+              <div class="tatami-header">
+                <span class="tatami-title">
+                  <span class="tatami-dot"></span>
+                  Tatami 2 (Mat 2)
+                </span>
+                <span class="category-badge-count" id="tatami-count-2">0 matches</span>
+              </div>
+              <div class="tatami-card-list" id="tatami-list-2">
+                <!-- Dynamically assigned scheduled matches -->
+              </div>
+            </div>
+
+            <!-- Tatami Mat 3 -->
+            <div class="tatami-lane tatami-3" id="tatami-lane-3">
+              <div class="tatami-header">
+                <span class="tatami-title">
+                  <span class="tatami-dot"></span>
+                  Tatami 3 (Mat 3)
+                </span>
+                <span class="category-badge-count" id="tatami-count-3">0 matches</span>
+              </div>
+              <div class="tatami-card-list" id="tatami-list-3">
+                <!-- Dynamically assigned scheduled matches -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RANKINGS VIEW ================= -->
+      <section id="rankings-view" class="view-section">
+        <div class="header-panel">
+          <div class="header-title-area">
+            <h1>Tournament <span class="gradient-text">Leaderboard</span></h1>
+            <p>Track cumulative performance stats, medal counts, and Dojo rankings.</p>
+          </div>
+        </div>
+
+        <div class="ranking-tabs-nav" style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 100%;">
+          <button class="btn btn-primary btn-tab active" id="btn-rankings-fighters" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.5rem 1rem;">👤 Competitor Standings</button>
+          <button class="btn btn-secondary btn-tab" id="btn-rankings-dojos" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.5rem 1rem;">🏢 Dojo / Club Medal Standings</button>
+        </div>
+
+        <div id="rankings-fighters-container" class="glass-card rankings-section-container">
+          <div class="bracket-category-select" style="padding: 1.5rem 1.5rem 0.5rem 1.5rem;">
+            <span class="form-label" style="margin-bottom: 0;">Filter Division:</span>
+            <select class="form-control" id="rankings-division-select" style="max-width: 250px;">
+              <!-- Categories dropdown list -->
+            </select>
+            <button class="btn btn-secondary" id="rankings-export-jpg-btn" style="height: 38px; display: flex; align-items: center; gap: 0.35rem;">📥 Export Rankings (JPG)</button>
+          </div>
+
+          <div class="glass-card rankings-table-card">
+            <table class="rankings-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px; text-align: center;">Rank</th>
+                  <th>Competitor Name</th>
+                  <th>Club / Dojo</th>
+                  <th style="text-align: center;">Matches</th>
+                  <th style="text-align: center; color: var(--accent);">Wins</th>
+                  <th style="text-align: center; color: #ef4444;">Losses</th>
+                  <th style="text-align: center; color: var(--gold);">Points Scored</th>
+                </tr>
+              </thead>
+              <tbody id="rankings-table-body">
+                <!-- Dynamically calculated rankings -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="rankings-dojos-container" class="glass-card rankings-section-container" style="display: none;">
+          <div class="glass-card rankings-table-card">
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <h2 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 0.5rem;">🏢 Dojo & Club Standings</h2>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Points formula: Gold (🥇) = 5 pts • Silver (🥈) = 3 pts • Bronze (🥉) = 1 pt</span>
+            </div>
+            <table class="rankings-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px; text-align: center;">Rank</th>
+                  <th>Dojo / Club / Affiliation</th>
+                  <th style="text-align: center; color: #f59e0b; width: 120px;">🥇 Gold (5)</th>
+                  <th style="text-align: center; color: #9ca3af; width: 120px;">🥈 Silver (3)</th>
+                  <th style="text-align: center; color: #b45309; width: 120px;">🥉 Bronze (1)</th>
+                  <th style="text-align: center; color: var(--accent); width: 140px;">Total Medals</th>
+                  <th style="text-align: center; color: var(--gold); width: 140px;">Total Points</th>
+                </tr>
+              </thead>
+              <tbody id="rankings-dojos-table-body">
+                <!-- Dynamically calculated club/dojo rankings -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= WINNERS PODIUM VIEW ================= -->
+      <section id="winners-view" class="view-section">
+        <div class="header-panel">
+          <div class="header-title-area">
+            <h1>Winners <span class="gradient-text">Podium</span></h1>
+            <p>Glory to the champions! Select a division to crown the tournament winners.</p>
+          </div>
+        </div>
+
+        <div class="glass-card" style="min-height: 500px; display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="bracket-category-select">
+            <span class="form-label" style="margin-bottom: 0;">Select Division:</span>
+            <select class="form-control" id="winners-division-select" style="max-width: 250px;">
+              <!-- Categories dropdown list -->
+            </select>
+            <button class="btn btn-secondary" id="winners-export-jpg-btn" style="height: 38px; display: flex; align-items: center; gap: 0.35rem;">📥 Export Tournament Winners (JPG)</button>
+          </div>
+
+          <div style="position: relative; flex-grow: 1;">
+            <!-- Confetti container background -->
+            <div class="confetti-container" id="podium-confetti-container"></div>
+            
+            <div class="podium-container" id="podium-display-wrapper">
+              <!-- Visual columns generated dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ID CREDENTIALS VIEW ================= -->
+      <section id="credentials-view" class="view-section">
+        <div class="header-panel">
+          <div class="header-title-area">
+            <h1>ID Badges & <span class="gradient-text">Credentials Hub</span></h1>
+            <p>Generate, customize, and batch-print premium credentials and security passes for competitors, officials, coaches, and staff.</p>
+          </div>
+        </div>
+
+        <div class="credentials-layout">
+          
+          <!-- Left Panel: Customizers & Forms -->
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Badge Theme selector card -->
+            <div class="glass-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <h3 style="font-size: 1.05rem; margin-bottom: 0.25rem; color: var(--text-main); font-family: var(--font-title); display: flex; align-items: center; gap: 0.5rem;">
+                🎨 Badge Designer Studio
+              </h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
+                Customize card dimensions, background colors, fonts, and branding assets in real-time.
+              </p>
+
+              <!-- 1. Theme Selector -->
+              <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label class="form-label" for="badge-theme-select" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Base Color Theme</label>
+                <select id="badge-theme-select" class="form-control" style="font-size: 0.8rem; margin-bottom: 0;">
+                  <option value="classic-white">Classic White</option>
+                  <option value="premium-purple">Royal Purple</option>
+                  <option value="deep-black">Obsidian Black</option>
+                  <option value="crimson-red">Crimson Red</option>
+                  <option value="custom">Custom Design...</option>
+                </select>
+              </div>
+
+              <!-- 2. Custom Background Settings (Only shown when theme is custom) -->
+              <div id="badge-custom-bg-settings" style="display: none; flex-direction: column; gap: 0.5rem; background: rgba(0,0,0,0.15); padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.68rem; font-weight: 700;">Background Fill Style</label>
+                  <select id="badge-bg-style-select" class="form-control" style="font-size: 0.75rem; margin-bottom: 0;">
+                    <option value="solid">Solid Color</option>
+                    <option value="gradient">Linear Gradient</option>
+                    <option value="radial">Radial Gradient</option>
+                    <option value="image">Background Image</option>
+                  </select>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem;" id="badge-custom-bg-colors-group">
+                  <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label id="lbl-color1" class="form-label" style="font-size: 0.68rem; font-weight: 700;">Primary Color</label>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                      <input type="color" id="badge-bg-color1" class="form-control" style="height: 30px; padding: 0; width: 34px; border: none; background: transparent; cursor: pointer; margin-bottom: 0;">
+                      <input type="text" id="badge-bg-color1-text" class="form-control" style="height: 30px; font-size: 0.7rem; padding: 0.2rem 0.4rem; margin-bottom: 0;" placeholder="#ffffff">
+                    </div>
+                  </div>
+                  <div class="form-group" id="badge-bg-color2-group" style="margin-bottom: 0; flex: 1; display: none;">
+                    <label class="form-label" style="font-size: 0.68rem; font-weight: 700;">Secondary Color</label>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                      <input type="color" id="badge-bg-color2" class="form-control" style="height: 30px; padding: 0; width: 34px; border: none; background: transparent; cursor: pointer; margin-bottom: 0;">
+                      <input type="text" id="badge-bg-color2-text" class="form-control" style="height: 30px; font-size: 0.7rem; padding: 0.2rem 0.4rem; margin-bottom: 0;" placeholder="#f3f4f6">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Background Image Uploader Section -->
+                <div id="badge-bg-image-uploader-section" style="display: none; flex-direction: column; gap: 0.35rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="form-label" style="font-size: 0.68rem; margin-bottom: 0; font-weight: 700;">Background Image</label>
+                    <button type="button" class="btn btn-sm btn-secondary" id="btn-badge-bg-img-clear" style="height: 20px; font-size: 0.6rem; padding: 0 0.35rem; display: none;">Clear</button>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+                    <div style="width: 32px; height: 32px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); flex-shrink: 0;">
+                      <img id="badge-bg-img-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <span id="badge-bg-img-placeholder" style="font-size: 0.6rem; color: var(--text-muted); font-weight: bold;">IMG</span>
+                    </div>
+                    <div style="flex-grow: 1;">
+                      <button type="button" class="btn btn-sm btn-secondary" id="btn-badge-bg-img-upload" style="height: 30px; font-size: 0.75rem; width: 100%;">Upload Background</button>
+                      <input type="file" id="badge-bg-img-input" accept="image/*" style="display: none;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Size Customizer -->
+              <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label class="form-label" for="badge-size-preset" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Dimensions Preset</label>
+                <select id="badge-size-preset" class="form-control" style="font-size: 0.8rem; margin-bottom: 0;">
+                  <option value="cr80">Vertical CR80 (54 x 86 mm) [Standard]</option>
+                  <option value="cr100">Large Pass (70 x 100 mm)</option>
+                  <option value="square">Square Badge (85 x 85 mm)</option>
+                  <option value="custom">Custom Dimensions...</option>
+                </select>
+              </div>
+
+              <!-- Custom size inputs (Only shown when preset is custom) -->
+              <div id="badge-custom-size-inputs" style="display: none; gap: 0.5rem; background: rgba(0,0,0,0.15); padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                  <label class="form-label" style="font-size: 0.68rem; font-weight: 700;">Width (mm)</label>
+                  <input type="number" id="badge-width-input" class="form-control" min="30" max="150" style="height: 30px; font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-bottom: 0;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                  <label class="form-label" style="font-size: 0.68rem; font-weight: 700;">Height (mm)</label>
+                  <input type="number" id="badge-height-input" class="form-control" min="30" max="200" style="height: 30px; font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-bottom: 0;">
+                </div>
+              </div>
+
+              <!-- 4. Typography Settings -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="badge-font-select" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Font Style</label>
+                  <select id="badge-font-select" class="form-control" style="font-size: 0.8rem; margin-bottom: 0;">
+                    <option value="Inter">Inter (Sleek)</option>
+                    <option value="Montserrat">Montserrat (Title)</option>
+                    <option value="Roboto">Roboto (Clean)</option>
+                    <option value="Georgia">Georgia (Classic)</option>
+                    <option value="system-ui">System Default</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="badge-font-size-select" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Text Scale</label>
+                  <select id="badge-font-size-select" class="form-control" style="font-size: 0.8rem; margin-bottom: 0;">
+                    <option value="small">Small</option>
+                    <option value="medium">Medium (Std)</option>
+                    <option value="large">Large</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Custom Element Font Sizes -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; background: rgba(0,0,0,0.15); padding: 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="badge-header-size-input" style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">Header Font Size (px)</label>
+                  <input type="number" id="badge-header-size-input" class="form-control" min="6" max="36" placeholder="Inherit" style="height: 30px; font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-bottom: 0;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="badge-id-size-input" style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">ID Font Size (px)</label>
+                  <input type="number" id="badge-id-size-input" class="form-control" min="6" max="28" placeholder="Inherit" style="height: 30px; font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-bottom: 0;">
+                </div>
+              </div>
+
+              <!-- Custom Colors -->
+              <div id="badge-custom-colors-settings" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                  <label class="form-label" style="font-size: 0.68rem; font-weight: 700;">Text Color</label>
+                  <div style="display: flex; align-items: center; gap: 0.25rem;">
+                    <input type="color" id="badge-text-color-picker" class="form-control" style="height: 30px; padding: 0; width: 30px; border: none; background: transparent; cursor: pointer; margin-bottom: 0;">
+                    <input type="text" id="badge-text-color-hex" class="form-control" style="height: 30px; font-size: 0.7rem; padding: 0.2rem 0.4rem; margin-bottom: 0;" placeholder="Inherit">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                  <label class="form-label" style="font-size: 0.68rem; font-weight: 700;">Accent Color</label>
+                  <div style="display: flex; align-items: center; gap: 0.25rem;">
+                    <input type="color" id="badge-accent-color-picker" class="form-control" style="height: 30px; padding: 0; width: 30px; border: none; background: transparent; cursor: pointer; margin-bottom: 0;">
+                    <input type="text" id="badge-accent-color-hex" class="form-control" style="height: 30px; font-size: 0.7rem; padding: 0.2rem 0.4rem; margin-bottom: 0;" placeholder="Inherit">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. Logo Branding Options -->
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <label class="form-label" style="font-size: 0.72rem; margin-bottom: 0; font-weight: 700; color: var(--text-main); cursor: pointer;" for="badge-show-logo-chk">
+                    Show Logo on Badge
+                  </label>
+                  <input type="checkbox" id="badge-show-logo-chk" style="width: 16px; height: 16px; cursor: pointer;" checked>
+                </div>
+                
+                <div id="badge-logo-uploader-section" style="display: flex; align-items: center; gap: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
+                  <div style="width: 32px; height: 32px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); flex-shrink: 0;">
+                    <img id="badge-logo-preview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                    <span id="badge-logo-placeholder" style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">LOGO</span>
+                  </div>
+                  <div style="flex-grow: 1;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-badge-logo-upload" style="font-size: 0.68rem; padding: 0.25rem 0.5rem; height: 26px; display: flex; align-items: center; justify-content: center; width: 100%;">
+                      📷 Badge Logo
+                    </button>
+                    <input type="file" id="badge-logo-input" accept="image/*" style="display: none;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 6. Authorized Signature Options -->
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 0.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <label class="form-label" style="font-size: 0.72rem; margin-bottom: 0; font-weight: 700; color: var(--text-main); cursor: pointer;" for="badge-show-signature-chk">
+                    Show Authorized Signature
+                  </label>
+                  <input type="checkbox" id="badge-show-signature-chk" style="width: 16px; height: 16px; cursor: pointer;" checked>
+                </div>
+                
+                <div id="badge-signature-settings-section" style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted);">Signatory Name</label>
+                      <input type="text" id="badge-auth-name-input" class="form-control" placeholder="Sensei Admin" style="height: 30px; font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-bottom: 0;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted);">Signatory Title</label>
+                      <input type="text" id="badge-auth-title-input" class="form-control" placeholder="Host" style="height: 30px; font-size: 0.75rem; padding: 0.2rem 0.5rem; margin-bottom: 0;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Staff & Official registration card -->
+            <div class="glass-card" style="padding: 1.25rem;">
+              <h3 style="font-size: 1rem; margin-bottom: 0.35rem; color: var(--text-main); font-family: var(--font-title);">
+                👤 Staff & Officials Register
+              </h3>
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Register Referees, Coaches, Tournament Officials, and Security Staff passes.
+              </p>
+              
+              <form id="staff-registration-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <input type="hidden" id="staff-edit-id">
+                
+                <!-- Avatar upload -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); flex-shrink: 0; position: relative;">
+                    <img id="staff-photo-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                    <span id="staff-photo-placeholder" style="font-size: 1.15rem; color: var(--text-muted);">👤</span>
+                  </div>
+                  <div style="flex-grow: 1;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-staff-photo-upload" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; height: 28px; display: flex; align-items: center; justify-content: center;">
+                      📷 Choose Photo
+                    </button>
+                    <input type="file" id="staff-photo-input" accept="image/*" style="display: none;">
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="staff-name" style="font-size: 0.7rem;">Full Name</label>
+                  <input type="text" id="staff-name" class="form-control" placeholder="e.g. Master Jin" required style="font-size: 0.8rem;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="staff-role" style="font-size: 0.7rem;">Official Title / Role</label>
+                  <select id="staff-role" class="form-control" required style="font-size: 0.8rem;">
+                    <option value="Referee">Referee</option>
+                    <option value="Coach">Coach</option>
+                    <option value="Official">Official</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="staff-dojo" style="font-size: 0.7rem;">Dojo / Affiliation</label>
+                  <input type="text" id="staff-dojo" class="form-control" placeholder="e.g. World Karate Federation" style="font-size: 0.8rem;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="staff-custom-id" style="font-size: 0.7rem;">Official ID (Alphanumeric/Custom)</label>
+                  <input type="text" id="staff-custom-id" class="form-control" placeholder="e.g. KM-REF-1002" style="font-size: 0.8rem; font-family: monospace; text-transform: uppercase;">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm" id="staff-submit-btn" style="height: 36px; font-size: 0.8rem; margin-top: 0.25rem; justify-content: center; width: 100%;">
+                  ➕ Register Official
+                </button>
+              </form>
+            </div>
+
+          </div>
+
+          <!-- Right Panel: Dynamic Credentials grid preview -->
+          <div class="glass-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; min-height: 550px; flex-grow: 1;">
+            
+            <!-- Filter Actions Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; gap: 1rem; flex-wrap: wrap;">
+              
+              <!-- Tab selection -->
+              <div style="display: flex; background: rgba(0, 0, 0, 0.2); padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); flex-shrink: 0;">
+                <button type="button" class="btn btn-sm cred-filter-tab active" data-tab="competitors" style="font-size: 0.75rem; border: none; background: transparent; padding: 0.35rem 0.85rem; height: auto;">
+                  Competitors
+                </button>
+                <button type="button" class="btn btn-sm cred-filter-tab" data-tab="staff" style="font-size: 0.75rem; border: none; background: transparent; padding: 0.35rem 0.85rem; height: auto;">
+                  Staff & Officials
+                </button>
+              </div>
+
+              <!-- Search Bar -->
+              <div style="display: flex; align-items: center; gap: 0.5rem; max-width: 240px; flex-grow: 1;">
+                <input type="text" id="cred-search-input" class="form-control" placeholder="🔍 Search name, club or ID..." style="font-size: 0.8rem; height: 34px; margin-bottom: 0; width: 100%;">
+              </div>
+
+              <!-- Division selector (Only shown for competitors) -->
+              <div id="cred-division-filter-wrapper" style="display: flex; align-items: center; gap: 0.5rem; max-width: 320px; flex-grow: 1;">
+                <span class="form-label" style="margin-bottom: 0; font-size: 0.78rem; font-weight: 700; white-space: nowrap; color: var(--text-muted);">Division:</span>
+                <select id="cred-division-select" class="form-control" style="font-size: 0.8rem; font-weight: 600; height: 34px;">
+                  <!-- Dynamic categories dropdown + ALL option -->
+                </select>
+              </div>
+
+              <!-- Role Selector (Only shown for staff & officials) -->
+              <div id="cred-role-filter-wrapper" style="display: none; align-items: center; gap: 0.5rem; max-width: 240px; flex-grow: 1;">
+                <span class="form-label" style="margin-bottom: 0; font-size: 0.78rem; font-weight: 700; white-space: nowrap; color: var(--text-muted);">Role:</span>
+                <select id="cred-role-select" class="form-control" style="font-size: 0.8rem; font-weight: 600; height: 34px;">
+                  <option value="ALL">All Roles</option>
+                  <option value="Referee">Referee</option>
+                  <option value="Coach">Coach</option>
+                  <option value="Official">Official</option>
+                  <option value="Staff">Staff</option>
+                </select>
+              </div>
+
+              <!-- Batch Export buttons -->
+              <button type="button" class="btn btn-sm" id="btn-export-badges-batch" style="height: 34px; font-size: 0.78rem; display: flex; align-items: center; gap: 0.35rem; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: var(--radius-md); font-weight: 700; padding: 0 0.85rem; cursor: pointer; box-shadow: 0 2px 8px rgba(16,185,129,0.25);">
+                <span>🖼️</span> Download All (JPG)
+              </button>
+            </div>
+
+            <!-- Credentials Card grid -->
+            <div id="credentials-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; justify-items: center; width: 100%;">
+              <!-- Dynamic credential badges populate here -->
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= SETTINGS VIEW ================= -->
+      <section id="settings-view" class="view-section">
+        <div class="header-panel">
+          <div class="header-title-area">
+            <h1>⚙️ App <span class="gradient-text">Settings</span></h1>
+            <p>Customize the appearance, theme, and colours of your tournament portal.</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+
+          <!-- ---- THEME MODE ---- -->
+          <div class="glass-card settings-card">
+            <div class="settings-card-header">
+              <span class="settings-card-icon">🌗</span>
+              <div>
+                <h3>Theme Mode</h3>
+                <p>Switch between dark and light interface styles.</p>
+              </div>
+            </div>
+            <div class="settings-theme-toggle-row">
+              <button id="settings-dark-btn" class="settings-mode-btn active" onclick="setThemeMode('dark')">
+                <span class="settings-mode-icon">🌑</span>
+                <span>Dark Mode</span>
+              </button>
+              <button id="settings-light-btn" class="settings-mode-btn" onclick="setThemeMode('light')">
+                <span class="settings-mode-icon">☀️</span>
+                <span>Light Mode</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ---- PRIMARY COLOUR ---- -->
+          <div class="glass-card settings-card">
+            <div class="settings-card-header">
+              <span class="settings-card-icon">🎨</span>
+              <div>
+                <h3>Primary Colour</h3>
+                <p>Used for buttons, highlights, and active states.</p>
+              </div>
+            </div>
+            <div class="settings-color-presets" id="primary-color-presets">
+              <button class="settings-color-swatch active" data-color="#7c3aed" style="background:#7c3aed;" onclick="setPrimaryColor('#7c3aed','#6d28d9','rgba(124,58,237,0.35)')" title="Purple (Default)"></button>
+              <button class="settings-color-swatch" data-color="#2563eb" style="background:#2563eb;" onclick="setPrimaryColor('#2563eb','#1d4ed8','rgba(37,99,235,0.35)')" title="Blue"></button>
+              <button class="settings-color-swatch" data-color="#db2777" style="background:#db2777;" onclick="setPrimaryColor('#db2777','#be185d','rgba(219,39,119,0.35)')" title="Pink"></button>
+              <button class="settings-color-swatch" data-color="#ea580c" style="background:#ea580c;" onclick="setPrimaryColor('#ea580c','#c2410c','rgba(234,88,12,0.35)')" title="Orange"></button>
+              <button class="settings-color-swatch" data-color="#0891b2" style="background:#0891b2;" onclick="setPrimaryColor('#0891b2','#0e7490','rgba(8,145,178,0.35)')" title="Cyan"></button>
+              <button class="settings-color-swatch" data-color="#16a34a" style="background:#16a34a;" onclick="setPrimaryColor('#16a34a','#15803d','rgba(22,163,74,0.35)')" title="Green"></button>
+              <button class="settings-color-swatch" data-color="#dc2626" style="background:#dc2626;" onclick="setPrimaryColor('#dc2626','#b91c1c','rgba(220,38,38,0.35)')" title="Red"></button>
+              <button class="settings-color-swatch settings-color-custom-swatch" title="Custom colour">
+                <input type="color" id="primary-custom-color-input" value="#7c3aed" oninput="applyCustomPrimaryColor(this.value)" style="opacity:0;position:absolute;width:100%;height:100%;cursor:pointer;border:none;">
+                <span style="font-size:1.1rem;pointer-events:none;">＋</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ---- ACCENT COLOUR ---- -->
+          <div class="glass-card settings-card">
+            <div class="settings-card-header">
+              <span class="settings-card-icon">✨</span>
+              <div>
+                <h3>Accent Colour</h3>
+                <p>Used for badges, success states, and data highlights.</p>
+              </div>
+            </div>
+            <div class="settings-color-presets" id="accent-color-presets">
+              <button class="settings-color-swatch active" data-color="#10b981" style="background:#10b981;" onclick="setAccentColor('#10b981','rgba(16,185,129,0.2)')" title="Emerald (Default)"></button>
+              <button class="settings-color-swatch" data-color="#f59e0b" style="background:#f59e0b;" onclick="setAccentColor('#f59e0b','rgba(245,158,11,0.2)')" title="Amber"></button>
+              <button class="settings-color-swatch" data-color="#6366f1" style="background:#6366f1;" onclick="setAccentColor('#6366f1','rgba(99,102,241,0.2)')" title="Indigo"></button>
+              <button class="settings-color-swatch" data-color="#f43f5e" style="background:#f43f5e;" onclick="setAccentColor('#f43f5e','rgba(244,63,94,0.2)')" title="Rose"></button>
+              <button class="settings-color-swatch" data-color="#14b8a6" style="background:#14b8a6;" onclick="setAccentColor('#14b8a6','rgba(20,184,166,0.2)')" title="Teal"></button>
+              <button class="settings-color-swatch settings-color-custom-swatch" title="Custom colour">
+                <input type="color" id="accent-custom-color-input" value="#10b981" oninput="applyCustomAccentColor(this.value)" style="opacity:0;position:absolute;width:100%;height:100%;cursor:pointer;border:none;">
+                <span style="font-size:1.1rem;pointer-events:none;">＋</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ---- SIDEBAR STYLE ---- -->
+          <div class="glass-card settings-card">
+            <div class="settings-card-header">
+              <span class="settings-card-icon">🗂️</span>
+              <div>
+                <h3>Sidebar Style</h3>
+                <p>Choose a visual style for the navigation sidebar.</p>
+              </div>
+            </div>
+            <div class="settings-sidebar-styles">
+              <button class="settings-sidebar-style-btn active" id="sidebar-style-glass" onclick="setSidebarStyle('glass')">
+                <div class="sidebar-style-preview glass-preview"></div>
+                <span>Glass</span>
+              </button>
+              <button class="settings-sidebar-style-btn" id="sidebar-style-solid" onclick="setSidebarStyle('solid')">
+                <div class="sidebar-style-preview solid-preview"></div>
+                <span>Solid</span>
+              </button>
+              <button class="settings-sidebar-style-btn" id="sidebar-style-minimal" onclick="setSidebarStyle('minimal')">
+                <div class="sidebar-style-preview minimal-preview"></div>
+                <span>Minimal</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ---- FONT SIZE ---- -->
+          <div class="glass-card settings-card">
+            <div class="settings-card-header">
+              <span class="settings-card-icon">🔤</span>
+              <div>
+                <h3>Font Size</h3>
+                <p>Adjust the base text size across the application.</p>
+              </div>
+            </div>
+            <div class="settings-font-row">
+              <button class="settings-font-btn" id="font-size-sm" onclick="setFontSize('sm')">Small</button>
+              <button class="settings-font-btn active" id="font-size-md" onclick="setFontSize('md')">Medium</button>
+              <button class="settings-font-btn" id="font-size-lg" onclick="setFontSize('lg')">Large</button>
+            </div>
+          </div>
+
+          <!-- ---- RESET ---- -->
+          <div class="glass-card settings-card">
+            <div class="settings-card-header">
+              <span class="settings-card-icon">🔄</span>
+              <div>
+                <h3>Reset Appearance</h3>
+                <p>Restore all appearance settings to their defaults.</p>
+              </div>
+            </div>
+            <button class="btn btn-secondary" style="margin-top:0.5rem;" onclick="resetAppearance()">Reset to Defaults</button>
+          </div>
+
+          <!-- ---- ASSOCIATION BRANDING ---- -->
+          <div class="glass-card settings-card" style="grid-column: span 2;">
+            <div class="settings-card-header" style="margin-bottom: 1.25rem;">
+              <span class="settings-card-icon">🏆</span>
+              <div>
+                <h3>Association Logo & Branding</h3>
+                <p>Customize the sidebar brand logo image, title texts, and tournament banner options.</p>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 1.5rem; align-items: center;">
+              <!-- Left: Image Preview & Input -->
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--border-color); overflow: hidden; background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; position: relative;">
+                  <img id="settings-branding-logo-preview" src="logo.png" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('settings-branding-logo-input').click()" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; height: auto;">
+                  Change Logo
+                </button>
+                <input type="file" id="settings-branding-logo-input" accept="image/*" style="display: none;" onchange="handleBrandingLogoUpload(this)">
+              </div>
+              
+              <!-- Right: Brand Title & Subtitle inputs -->
+              <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" for="settings-branding-title" style="font-size: 0.8rem; margin-bottom: 0.25rem;">Sidebar Brand Title (Main Text)</label>
+                  <input type="text" id="settings-branding-title" class="form-control" placeholder="e.g. ASSAM KARATE" style="height: 38px;">
+                </div>
+                
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" for="settings-branding-subtitle" style="font-size: 0.8rem; margin-bottom: 0.25rem;">Sidebar Brand Subtitle (Accent Text)</label>
+                  <input type="text" id="settings-branding-subtitle" class="form-control" placeholder="e.g. Association" style="height: 38px;">
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+              <button type="button" class="btn btn-secondary" onclick="resetBrandingSettings()" style="height: 38px;">Reset Branding</button>
+              <button type="button" class="btn btn-primary" onclick="saveBrandingSettings()" style="height: 38px; min-width: 120px;">Save Branding</button>
+            </div>
+          </div>
+
+          <!-- ---- SUPABASE INTEGRATION ---- -->
+          <div class="glass-card settings-card" style="grid-column: span 2;">
+            <div class="settings-card-header" style="margin-bottom: 1.25rem;">
+              <span class="settings-card-icon">⚡</span>
+              <div>
+                <h3>Supabase Realtime Sync</h3>
+                <p>Connect your tournament portal to a Supabase database to automatically sync all changes across multiple screens and devices in real-time.</p>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="settings-supabase-url" style="font-size: 0.8rem; margin-bottom: 0.25rem;">Supabase Project URL</label>
+                <input type="text" id="settings-supabase-url" class="form-control" placeholder="https://your-project.supabase.co" style="height: 38px;">
+              </div>
+              
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="settings-supabase-key" style="font-size: 0.8rem; margin-bottom: 0.25rem;">Supabase Anon API Key</label>
+                <input type="password" id="settings-supabase-key" class="form-control" placeholder="eyJhbGciOi..." style="height: 38px;">
+              </div>
+              
+              <div id="supabase-status-message" style="font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); display: none;"></div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+              <button type="button" class="btn btn-secondary" onclick="disconnectSupabase()" style="height: 38px;">Disconnect</button>
+              <button type="button" class="btn btn-primary" onclick="connectSupabase()" style="height: 38px; min-width: 150px;">Connect & Sync</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= MODALS OVERLAYS ================= -->
+
+  <!-- Modal: Add / Edit Category -->
+  <div class="modal-overlay" id="modal-category">
+    <div class="modal-content">
+      <button class="modal-close" id="close-category-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header">
+        <h2 id="category-modal-title">Create Division</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Group fighters by weight or rank categories.</p>
+      </div>
+      <form id="category-form">
+        <input type="hidden" id="category-edit-id">
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label class="form-label" for="category-type">Division Type</label>
+            <select id="category-type" class="form-control">
+              <option value="Kumite">Kumite (Sparring)</option>
+              <option value="Kata">Kata (Forms)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="category-gender">Gender Division</label>
+            <select id="category-gender" class="form-control">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label class="form-label" for="category-age">Age Class</label>
+            <input type="text" id="category-age" class="form-control" placeholder="e.g. Senior" list="age-classes-list" required>
+            <datalist id="age-classes-list">
+              <option value="Senior">Senior (18+ yrs)</option>
+              <option value="Under 21">Under 21 (18-20 yrs)</option>
+              <option value="Junior">Junior (16-17 yrs)</option>
+              <option value="Cadet">Cadet (14-15 yrs)</option>
+              <option value="Children">Children (U14)</option>
+            </datalist>
+          </div>
+          <div>
+            <label class="form-label" for="category-weight">Weight Class</label>
+            <input type="text" id="category-weight" class="form-control" placeholder="e.g. -67kg" list="weight-classes-list" required>
+            <datalist id="weight-classes-list">
+              <option value="-60kg">-60 kg</option>
+              <option value="-67kg">-67 kg</option>
+              <option value="-75kg">-75 kg</option>
+              <option value="-84kg">-84 kg</option>
+              <option value="+84kg">+84 kg</option>
+              <option value="-50kg">-50 kg</option>
+              <option value="-55kg">-55 kg</option>
+              <option value="-61kg">-61 kg</option>
+              <option value="-68kg">-68 kg</option>
+              <option value="+68kg">+68 kg</option>
+              <option value="Open">Open Weight</option>
+            </datalist>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="category-time">Division Schedule Time (Optional)</label>
+          <input type="text" id="category-time" class="form-control" placeholder="e.g. 10:00 AM, 13:30, or TBD" style="margin-bottom: 0;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="category-name">Division Title (Compiled Preview)</label>
+          <input type="text" id="category-name" class="form-control" placeholder="Generated automatically..." required>
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Calculated automatically, but you can manually override it if desired.</span>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-category-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Division</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Competitor Profile Showcase -->
+  <div class="modal-overlay" id="modal-player-profile">
+    <div class="modal-content" style="max-width: 500px; padding: 2rem; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); border-radius: var(--radius-lg); position: relative;">
+      <button class="modal-close" id="close-player-profile-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+
+      <!-- VIEW MODE -->
+      <div id="player-profile-view-mode">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
+            <div id="profile-avatar-wrapper" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4); margin: 0 auto;">
+              <img id="profile-avatar-img" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <span id="profile-avatar-placeholder" style="font-size: 2.5rem; font-weight: 800; color: #ffffff;"></span>
+            </div>
+            <span id="profile-belt-badge" style="position: absolute; bottom: 0; right: 0; background: #000; color: #fff; border: 1.5px solid var(--border-color); font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); text-transform: uppercase;"></span>
+          </div>
+          <h2 id="profile-name" style="font-family: var(--font-title); font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem; letter-spacing: -0.01em;"></h2>
+          <p id="profile-id" style="font-family: monospace; font-size: 0.85rem; color: var(--accent); font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 0.05em;"></p>
+          <span id="profile-dojo" style="display: inline-block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; background: rgba(255, 255, 255, 0.05); padding: 0.25rem 0.75rem; border-radius: 50px; border: 1px solid var(--border-color);"></span>
+        </div>
+
+        <!-- Stats Grid -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1.5rem; background: rgba(0, 0, 0, 0.2); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: center;">
+          <div>
+            <div id="profile-stat-matches" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">0</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 0.25rem;">Matches</div>
+          </div>
+          <div>
+            <div id="profile-stat-wins" style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">0</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 0.25rem;">Wins</div>
+          </div>
+          <div>
+            <div id="profile-stat-losses" style="font-size: 1.25rem; font-weight: 800; color: #ef4444;">0</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 0.25rem;">Losses</div>
+          </div>
+          <div>
+            <div id="profile-stat-points" style="font-size: 1.25rem; font-weight: 800; color: var(--gold);">0</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 0.25rem;">Points</div>
+          </div>
+        </div>
+
+        <!-- Demographics / Details List -->
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; background: rgba(255, 255, 255, 0.02); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.82rem;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-muted); font-weight: 600;">Division</span>
+            <span id="profile-detail-division" style="color: var(--text-main); font-weight: 700;"></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-muted); font-weight: 600;">Weight Category</span>
+            <span id="profile-detail-weight" style="color: var(--text-main); font-weight: 700;"></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-muted); font-weight: 600;">Gender & DOB</span>
+            <span id="profile-detail-gender-dob" style="color: var(--text-main); font-weight: 700;"></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-muted); font-weight: 600;">Belt Rank</span>
+            <span id="profile-detail-belt" style="color: var(--text-main); font-weight: 700;"></span>
+          </div>
+          <div id="profile-location-row" style="display: none; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-weight: 600;">📍 Location</span>
+            <span id="profile-detail-location" style="color: var(--text-main); font-weight: 700;"></span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" id="btn-player-profile-edit" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.35rem; font-weight: 700; height: 42px;">
+            <span>✏️</span> Edit Profile
+          </button>
+          <button type="button" class="btn" id="btn-profile-print-badge" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.35rem; font-weight: 700; height: 42px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; box-shadow: 0 2px 8px rgba(16,185,129,0.25);">
+            <span>🖼️</span> Save JPG
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-profile-close" style="flex: 1; font-weight: 700; height: 42px;">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- EDIT MODE (Initially Hidden) -->
+      <div id="player-profile-edit-mode" style="display: none;">
+        <h2 style="font-family: var(--font-title); font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; text-align: center;">✏️ Edit Competitor Profile</h2>
+        <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-bottom: 1.5rem;">Update competitor details and persist changes.</p>
+        <form id="player-profile-edit-form" style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="hidden" id="player-edit-id">
+          <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); flex-shrink: 0; position: relative;">
+              <img id="player-edit-photo-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <span id="player-edit-photo-placeholder" style="font-size: 1.15rem; color: var(--text-muted);">👤</span>
+            </div>
+            <div style="flex-grow: 1;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-player-photo-upload" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; height: 28px;">📷 Choose Photo</button>
+              <input type="file" id="player-edit-photo-input" accept="image/*" style="display: none;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-name" style="font-size: 0.7rem;">Full Name</label>
+            <input type="text" id="player-edit-name" class="form-control" required style="font-size: 0.8rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-belt" style="font-size: 0.7rem;">Belt Rank</label>
+            <select id="player-edit-belt" class="form-control" required style="font-size: 0.8rem;">
+              <option value="white">White</option>
+              <option value="yellow">Yellow</option>
+              <option value="orange">Orange</option>
+              <option value="green">Green</option>
+              <option value="blue">Blue</option>
+              <option value="purple">Purple</option>
+              <option value="brown">Brown</option>
+              <option value="black">Black</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-dojo" style="font-size: 0.7rem;">Dojo / Club</label>
+            <input type="text" id="player-edit-dojo" class="form-control" style="font-size: 0.8rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-weight" style="font-size: 0.7rem;">Weight (kg)</label>
+            <input type="number" id="player-edit-weight" class="form-control" style="font-size: 0.8rem;" placeholder="e.g. 68">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-gender" style="font-size: 0.7rem;">Gender</label>
+            <select id="player-edit-gender" class="form-control" required style="font-size: 0.8rem;">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-dob" style="font-size: 0.7rem;">Date of Birth</label>
+            <input type="date" id="player-edit-dob" class="form-control" style="font-size: 0.8rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="player-edit-customid" style="font-size: 0.7rem;">Custom ID (Alphanumeric)</label>
+            <input type="text" id="player-edit-customid" class="form-control" placeholder="e.g. KM-COMP-1045" style="font-size: 0.8rem; font-family: monospace; text-transform: uppercase;">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="player-edit-city" style="font-size: 0.7rem;">City <span style="font-size:0.65rem;color:var(--text-muted);font-weight:400;">(optional)</span></label>
+              <input type="text" id="player-edit-city" class="form-control" placeholder="e.g. Guwahati" style="font-size: 0.8rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="player-edit-country" style="font-size: 0.7rem;">Country <span style="font-size:0.65rem;color:var(--text-muted);font-weight:400;">(optional)</span></label>
+              <select id="player-edit-country" class="form-control" style="font-size: 0.8rem;">
+                <option value="">-- Select --</option>
+                <option>India</option>
+                <option>Afghanistan</option>
+                <option>Australia</option>
+                <option>Bangladesh</option>
+                <option>Bhutan</option>
+                <option>Brazil</option>
+                <option>Canada</option>
+                <option>China</option>
+                <option>Egypt</option>
+                <option>France</option>
+                <option>Germany</option>
+                <option>Indonesia</option>
+                <option>Iran</option>
+                <option>Iraq</option>
+                <option>Italy</option>
+                <option>Japan</option>
+                <option>Jordan</option>
+                <option>Kazakhstan</option>
+                <option>Malaysia</option>
+                <option>Maldives</option>
+                <option>Mexico</option>
+                <option>Myanmar</option>
+                <option>Nepal</option>
+                <option>Netherlands</option>
+                <option>New Zealand</option>
+                <option>Pakistan</option>
+                <option>Philippines</option>
+                <option>Russia</option>
+                <option>Saudi Arabia</option>
+                <option>South Korea</option>
+                <option>Spain</option>
+                <option>Sri Lanka</option>
+                <option>Thailand</option>
+                <option>Turkey</option>
+                <option>UAE</option>
+                <option>United Kingdom</option>
+                <option>United States</option>
+                <option>Uzbekistan</option>
+                <option>Vietnam</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <button type="button" class="btn btn-secondary" id="btn-player-edit-cancel" style="flex: 1; font-weight: 700; height: 38px;">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex: 1; font-weight: 700; height: 38px;">💾 Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Official & Staff Profile Showcase & Dynamic Editor -->
+  <div class="modal-overlay" id="modal-staff-profile">
+    <div class="modal-content" style="max-width: 500px; padding: 2rem; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); border-radius: var(--radius-lg); position: relative;">
+      <button class="modal-close" id="close-staff-profile-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+
+      <!-- VIEW MODE -->
+      <div id="staff-profile-view-mode">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <!-- Avatar Photo / Initials Placeholder -->
+          <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
+            <div id="staff-profile-avatar-wrapper" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4); margin: 0 auto;">
+              <img id="staff-profile-avatar-img" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <span id="staff-profile-avatar-placeholder" style="font-size: 2.5rem; font-weight: 800; color: #ffffff;"></span>
+            </div>
+            <span id="staff-profile-role-badge" style="position: absolute; bottom: -5px; right: -5px; background: var(--primary); color: #fff; border: 1.5px solid var(--border-color); font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); text-transform: uppercase;"></span>
+          </div>
+          
+          <h2 id="staff-profile-name" style="font-family: var(--font-title); font-size: 1.6rem; font-weight: 800; color: #ffffff; margin-bottom: 0.25rem; letter-spacing: -0.01em;"></h2>
+          <p id="staff-profile-id" style="font-family: monospace; font-size: 0.85rem; color: var(--accent); font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 0.05em;"></p>
+          <span id="staff-profile-dojo" style="display: inline-block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; background: rgba(255, 255, 255, 0.05); padding: 0.25rem 0.75rem; border-radius: 50px; border: 1px solid var(--border-color);"></span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; background: rgba(255, 255, 255, 0.02); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.82rem;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-muted); font-weight: 600;">Affiliation / Dojo</span>
+            <span id="staff-profile-detail-dojo" style="color: #ffffff; font-weight: 700;"></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem;">
+            <span style="color: var(--text-muted); font-weight: 600;">Official Title / Role</span>
+            <span id="staff-profile-detail-role" style="color: #ffffff; font-weight: 700;"></span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-weight: 600;">Persistent Custom ID</span>
+            <span id="staff-profile-detail-customid" style="color: #ffffff; font-family: monospace; font-weight: 700;"></span>
+          </div>
+        </div>
+
+        <!-- View Actions -->
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" id="btn-staff-profile-edit" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.35rem; font-weight: 700; height: 42px;">
+            <span>✏️</span> Edit Profile / ID
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-staff-profile-close" style="flex: 1; font-weight: 700; height: 42px;">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- EDIT MODE (Initially Hidden) -->
+      <div id="staff-profile-edit-mode" style="display: none;">
+        <h2 style="font-family: var(--font-title); font-size: 1.3rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem; text-align: center;">✏️ Edit Official Profile</h2>
+        <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-bottom: 1.5rem;">Dynamically update credentials information and persistent identification.</p>
+        
+        <form id="staff-profile-edit-form" style="display: flex; flex-direction: column; gap: 1rem;">
+          <input type="hidden" id="staff-profile-edit-id">
+          
+          <!-- Photo Upload in edit mode -->
+          <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); flex-shrink: 0; position: relative;">
+              <img id="staff-profile-edit-photo-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <span id="staff-profile-edit-photo-placeholder" style="font-size: 1.15rem; color: var(--text-muted);">👤</span>
+            </div>
+            <div style="flex-grow: 1;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-staff-profile-photo-upload" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; height: 28px;">
+                📷 Choose Photo
+              </button>
+              <input type="file" id="staff-profile-edit-photo-input" accept="image/*" style="display: none;">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="staff-profile-edit-name" style="font-size: 0.7rem;">Full Name</label>
+            <input type="text" id="staff-profile-edit-name" class="form-control" required style="font-size: 0.8rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="staff-profile-edit-role" style="font-size: 0.7rem;">Official Title / Role</label>
+            <select id="staff-profile-edit-role" class="form-control" required style="font-size: 0.8rem;">
+              <option value="Referee">Referee</option>
+              <option value="Coach">Coach</option>
+              <option value="Official">Official</option>
+              <option value="Staff">Staff</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="staff-profile-edit-dojo" style="font-size: 0.7rem;">Dojo / Affiliation</label>
+            <input type="text" id="staff-profile-edit-dojo" class="form-control" style="font-size: 0.8rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="staff-profile-edit-customid-val" style="font-size: 0.7rem;">Official ID (Alphanumeric/Custom)</label>
+            <input type="text" id="staff-profile-edit-customid-val" class="form-control" placeholder="e.g. KM-REF-1002" style="font-size: 0.8rem; font-family: monospace; text-transform: uppercase;">
+          </div>
+
+          <!-- Edit Actions -->
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <button type="button" class="btn btn-secondary" id="btn-staff-profile-edit-cancel" style="flex: 1; font-weight: 700; height: 38px;">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" style="flex: 1; font-weight: 700; height: 38px; justify-content: center;">
+              💾 Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Fighter -->
+  <div class="modal-overlay" id="modal-fighter">
+    <div class="modal-content">
+      <button class="modal-close" id="close-fighter-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header">
+        <h2 id="fighter-modal-title">Register Competitor</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Register fighter profiles for matching.</p>
+      </div>
+      <form id="fighter-form">
+        <input type="hidden" id="fighter-edit-id">
+        <div class="form-group" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; background: rgba(255, 255, 255, 0.02); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div class="fighter-photo-preview-wrapper" style="width: 54px; height: 54px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); flex-shrink: 0; position: relative;">
+            <img id="fighter-photo-preview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+            <span id="fighter-photo-placeholder" style="font-size: 1.35rem; color: var(--text-muted);">👤</span>
+          </div>
+          <div style="flex-grow: 1;">
+            <label class="form-label" style="font-size: 0.72rem; font-weight: 700; margin-bottom: 0.25rem; display: block; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Competitor Photo</label>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-fighter-photo-upload" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; display: flex; align-items: center; gap: 0.25rem; height: 32px;">
+              <span>📷</span> Choose Photo
+            </button>
+            <input type="file" id="fighter-photo-input" accept="image/*" style="display: none;">
+          </div>
+        </div>
+        <div class="form-group" id="fighter-copy-existing-group" style="background: rgba(124, 58, 237, 0.05); border: 1.5px solid rgba(124, 58, 237, 0.15); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <label class="form-label" for="fighter-copy-existing-select" style="color: #c084fc; font-weight: 700; display: flex; align-items: center; gap: 0.25rem; font-size: 0.82rem;">📋 Copy Details from Existing Competitor</label>
+          <select id="fighter-copy-existing-select" class="form-control" style="font-size: 0.82rem;"></select>
+          <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem; display: block;">Select an already registered player from this or any other event to register them in another category.</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fighter-name">Full Name</label>
+          <input type="text" id="fighter-name" class="form-control" placeholder="e.g. Hiroshi Tanaka" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fighter-club">Club / Dojo / Affiliation</label>
+          <input type="text" id="fighter-club" class="form-control" placeholder="e.g. Kyoto Shotokan Dojo">
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label class="form-label" for="fighter-belt">Belt Rank</label>
+            <select id="fighter-belt" class="form-control">
+              <option value="white">White Belt (10th-9th Kyu)</option>
+              <option value="yellow">Yellow Belt (8th Kyu)</option>
+              <option value="orange">Orange Belt (7th Kyu)</option>
+              <option value="green">Green Belt (6th Kyu)</option>
+              <option value="blue">Blue Belt (5th-4th Kyu)</option>
+              <option value="purple">Purple Belt (3rd Kyu)</option>
+              <option value="brown">Brown Belt (2nd-1st Kyu)</option>
+              <option value="black">Black Belt (1st Dan+)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="fighter-gender">Gender</label>
+            <select id="fighter-gender" class="form-control" required>
+              <option value="">-- Select --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label class="form-label" for="fighter-dob">Date of Birth</label>
+            <input type="date" id="fighter-dob" class="form-control">
+          </div>
+          <div>
+            <label class="form-label" for="fighter-weight">Weight (kg)</label>
+            <input type="number" id="fighter-weight" class="form-control" placeholder="e.g. 68.5" step="0.1" min="1">
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label class="form-label" for="fighter-city">City <span style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <input type="text" id="fighter-city" class="form-control" placeholder="e.g. Guwahati">
+          </div>
+          <div>
+            <label class="form-label" for="fighter-country">Country <span style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <select id="fighter-country" class="form-control">
+              <option value="">-- Select Country --</option>
+              <option>India</option>
+              <option>Afghanistan</option>
+              <option>Australia</option>
+              <option>Bangladesh</option>
+              <option>Bhutan</option>
+              <option>Brazil</option>
+              <option>Canada</option>
+              <option>China</option>
+              <option>Egypt</option>
+              <option>France</option>
+              <option>Germany</option>
+              <option>Indonesia</option>
+              <option>Iran</option>
+              <option>Iraq</option>
+              <option>Italy</option>
+              <option>Japan</option>
+              <option>Jordan</option>
+              <option>Kazakhstan</option>
+              <option>Malaysia</option>
+              <option>Maldives</option>
+              <option>Mexico</option>
+              <option>Myanmar</option>
+              <option>Nepal</option>
+              <option>Netherlands</option>
+              <option>New Zealand</option>
+              <option>Pakistan</option>
+              <option>Philippines</option>
+              <option>Russia</option>
+              <option>Saudi Arabia</option>
+              <option>South Korea</option>
+              <option>Spain</option>
+              <option>Sri Lanka</option>
+              <option>Thailand</option>
+              <option>Turkey</option>
+              <option>UAE</option>
+              <option>United Kingdom</option>
+              <option>United States</option>
+              <option>Uzbekistan</option>
+              <option>Vietnam</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem;">Competition Discipline</label>
+          <div class="discipline-selector-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; background: rgba(0, 0, 0, 0.2); padding: 0.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+            <label style="margin: 0; padding: 0.5rem; text-align: center; border-radius: calc(var(--radius-md) - 2px); cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" class="discipline-label active" id="lbl-discipline-kumite">
+              <input type="radio" name="fighter-discipline" value="kumite" style="display: none;" checked> Kumite Only
+            </label>
+            <label style="margin: 0; padding: 0.5rem; text-align: center; border-radius: calc(var(--radius-md) - 2px); cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" class="discipline-label" id="lbl-discipline-kata">
+              <input type="radio" name="fighter-discipline" value="kata" style="display: none;"> Kata Only
+            </label>
+            <label style="margin: 0; padding: 0.5rem; text-align: center; border-radius: calc(var(--radius-md) - 2px); cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" class="discipline-label" id="lbl-discipline-both">
+              <input type="radio" name="fighter-discipline" value="both" style="display: none;"> Both (Kata & Kumite)
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="fighter-kumite-division-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="form-label" for="fighter-division" style="margin-bottom: 0;">Kumite Division Assignment</label>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="badge-auto-match" id="fighter-auto-match-badge" style="display: none; background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 99px; border: 1px solid rgba(16, 185, 129, 0.3); animation: pulseLive 1.5s infinite;">Auto-Matched</span>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-autofill-division-criteria">
+                <span>✨</span> Auto-Fill Criteria
+              </button>
+            </div>
+          </div>
+          <select id="fighter-division" class="form-control" required>
+            <!-- Dynamic Category List inside fighter form -->
+          </select>
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Automatically assigns based on Date of Birth, Gender, and Weight. You can override manually.</span>
+        </div>
+
+        <div class="form-group" id="fighter-kata-division-group" style="display: none;">
+          <label class="form-label" for="fighter-kata-division" style="margin-bottom: 0.5rem;">Kata Division Assignment</label>
+          <select id="fighter-kata-division" class="form-control">
+            <!-- Dynamic Kata Category List inside fighter form -->
+          </select>
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Select the matching Kata category division for this competitor.</span>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-fighter-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Register Fighter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Modal: Import CSV -->
+  <div class="modal-overlay" id="modal-import-csv">
+    <div class="modal-content" style="max-width: 520px;">
+      <button class="modal-close" id="close-import-csv-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header">
+        <h2>Import Fighters from CSV</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Bulk register fighters and auto-match them into divisions.</p>
+      </div>
+      
+      <div class="import-template-box" style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 1.25rem;">
+        <span style="font-weight: 700; font-size: 0.75rem; display: block; margin-bottom: 0.35rem; color: var(--accent); letter-spacing: 0.05em;">REQUIRED CSV COLUMNS:</span>
+        <code style="font-size: 0.78rem; color: var(--text-main); background: rgba(0,0,0,0.3); padding: 0.4rem 0.6rem; border-radius: 4px; display: block; word-break: break-all; font-family: monospace; border: 1px solid rgba(255,255,255,0.05);">Name, Club, Belt, DoB, Gender, Weight</code>
+        <div style="margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted); line-height: 1.35;">
+          * <strong>DoB:</strong> Date of Birth (YYYY-MM-DD).<br>
+          * <strong>Weight:</strong> Numerical weight in kg (e.g. 73).<br>
+          * <strong>Belt:</strong> Rank (white, yellow, orange, green, blue, purple, brown, black).<br>
+          * <strong>Gender:</strong> Male or Female.<br>
+          * Optional columns: <strong>Type</strong> (Kumite/Kata). If missing, defaults to Kumite.
+        </div>
+      </div>
+
+      <div class="drag-drop-zone" id="csv-drag-drop-zone" style="border: 2px dashed rgba(124, 58, 237, 0.4); border-radius: var(--radius-lg); padding: 2rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; text-align: center; cursor: pointer; background: rgba(255,255,255,0.01); transition: var(--transition-smooth);">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" style="filter: drop-shadow(0 0 5px var(--primary-glow));"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Drag & drop CSV spreadsheet here</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">or click to browse local files</span>
+        <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+      </div>
+
+      <div id="import-preview-console" style="display: none; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; font-family: monospace; font-size: 0.72rem; color: #a78bfa; margin-top: 1rem; line-height: 1.4;">
+        <!-- Parsing results output -->
+      </div>
+
+      <div class="form-actions" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <button type="button" class="btn btn-accent btn-sm" id="download-csv-template-btn" style="border: 1px solid rgba(16, 185, 129, 0.3);">Download Template</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" id="cancel-import-csv-btn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="process-import-csv-btn" disabled>Import 0 Fighters</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Match Scorecard Form -->
+  <div class="modal-overlay" id="modal-scorecard">
+    <div class="modal-content" style="max-width: 580px;">
+      <button class="modal-close" id="close-scorecard-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+        <div>
+          <h2>Kumite Match Scorecard</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Adjust points, toggle mat live statuses, and record the final victor.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;">
+          <button type="button" class="btn btn-secondary btn-sm" id="scorecard-swap-btn" style="font-size: 0.75rem; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.25rem 0.5rem; height: 32px; display: none;">
+            🔁 Swap Sides
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="scorecard-edit-pairings-btn" style="font-size: 0.75rem; border: 1px solid rgba(124, 58, 237, 0.3); padding: 0.25rem 0.5rem; height: 32px;">
+            ✏️ Edit Matchup
+          </button>
+        </div>
+      </div>
+
+      <input type="hidden" id="scorecard-match-id">
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="scorecard-header-vs">
+          <!-- Fighter A box -->
+          <div class="scorecard-fighter-box scorecard-aka-box" id="sc-fighter-a-box">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">🔴 Aka (Red Side)</span>
+            <span class="belt-badge" id="sc-fighter-a-belt">White</span>
+            <h3 id="sc-fighter-a-name">Fighter A</h3>
+            <select id="sc-fighter-a-select" class="form-control" style="display: none;"></select>
+            <span class="fighter-card-club" id="sc-fighter-a-club">Dojo A</span>
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="sc-pt-a-minus">-</button>
+              <input type="number" id="sc-score-a" class="form-control scorecard-point-input" value="0" min="0">
+              <button type="button" class="btn btn-secondary btn-sm" id="sc-pt-a-plus">+</button>
+            </div>
+            
+            <span id="sc-fighter-a-instruction" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Click box or score to select victor</span>
+          </div>
+
+          <div class="scorecard-vs-text">VS</div>
+
+          <!-- Fighter B box -->
+          <div class="scorecard-fighter-box scorecard-ao-box" id="sc-fighter-b-box">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">🔵 Ao (Blue Side)</span>
+            <span class="belt-badge" id="sc-fighter-b-belt">White</span>
+            <h3 id="sc-fighter-b-name">Fighter B</h3>
+            <select id="sc-fighter-b-select" class="form-control" style="display: none;"></select>
+            <span class="fighter-card-club" id="sc-fighter-b-club">Dojo B</span>
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="sc-pt-b-minus">-</button>
+              <input type="number" id="sc-score-b" class="form-control scorecard-point-input" value="0" min="0">
+              <button type="button" class="btn btn-secondary btn-sm" id="sc-pt-b-plus">+</button>
+            </div>
+            
+            <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Click box or score to select victor</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="sc-mat-select">Tatami Assignment</label>
+            <select id="sc-mat-select" class="form-control">
+              <option value="0">Unassigned</option>
+              <option value="1">Tatami 1</option>
+              <option value="2">Tatami 2</option>
+              <option value="3">Tatami 3</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="sc-status-select">Match State</label>
+            <select id="sc-status-select" class="form-control">
+              <option value="scheduled">Scheduled</option>
+              <option value="live">Live (In Progress)</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="sc-time-input">Match Time</label>
+            <input type="text" id="sc-time-input" class="form-control" placeholder="e.g. 10:30 AM">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 0.5rem;">
+          <div class="form-group">
+            <label class="form-label" for="sc-referee-select">Match Referee (Linked to Registry)</label>
+            <select id="sc-referee-select" class="form-control">
+              <option value="">Unassigned Referee</option>
+              <!-- Dynamically populated from state.staff with Referee IDs -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" id="cancel-scorecard-btn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="save-scorecard-btn">Record Score</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Manual Schedule Creator -->
+  <div class="modal-overlay" id="modal-schedule">
+    <div class="modal-content">
+      <button class="modal-close" id="close-schedule-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header">
+        <h2>Schedule Manual Match</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Create custom exhibition or bracket matches directly.</p>
+      </div>
+      <form id="schedule-form">
+        <div class="form-group">
+          <label class="form-label" for="sched-division-select">Karate Division</label>
+          <select id="sched-division-select" class="form-control" required>
+            <!-- Dynamically populated categories -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sched-fighter-a-select">Fighter Red (Aka)</label>
+          <select id="sched-fighter-a-select" class="form-control" required>
+            <!-- Dynamically populated fighters -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sched-fighter-b-select">Fighter Blue (Ao)</label>
+          <select id="sched-fighter-b-select" class="form-control" required>
+            <!-- Dynamically populated fighters -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sched-mat-select">Tatami Assignment</label>
+          <select id="sched-mat-select" class="form-control">
+            <option value="1">Tatami 1</option>
+            <option value="2">Tatami 2</option>
+            <option value="3">Tatami 3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sched-match-time">Scheduled Time (Optional)</label>
+          <input type="text" id="sched-match-time" class="form-control" placeholder="e.g. 10:30 AM or 14:00">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-schedule-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Schedule Game</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tatami Management Modal Overlay -->
+  <div class="modal-overlay" id="modal-tatami-management">
+    <div class="modal-content" style="max-width: 480px;">
+      <button class="modal-close" id="close-tatami-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header">
+        <h2>Manage Tatami Mats</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Add, rename, or delete combat mats (Tatamis) for your championship.</p>
+      </div>
+      <div id="tatami-modal-list" style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 240px; overflow-y: auto; margin-bottom: 1.25rem; padding-right: 0.25rem;">
+        <!-- Dynamic list of tatamis rendered here -->
+      </div>
+      <form id="add-tatami-form" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <label class="form-label" for="new-tatami-name" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.35rem; display: block; text-transform: uppercase;">Add New Tatami Area</label>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="new-tatami-name" class="form-control" placeholder="e.g. Tatami 4" required style="margin-bottom: 0;">
+          <button type="submit" class="btn btn-primary" style="white-space: nowrap;">+ Add Mat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Login -->
+  <div class="modal-overlay" id="modal-admin-login">
+    <div class="modal-content" style="max-width: 400px; padding: 2rem; background: #0f1322; border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <button class="modal-close" id="close-admin-login-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header" style="text-align: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: var(--font-title);">
+          🔒 Sensei Login
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Unlock tournament management tools.</p>
+      </div>
+      <form id="admin-login-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="admin-login-password" style="text-align: center; display: block; margin-bottom: 0.5rem;">Admin Password</label>
+          <input type="password" id="admin-login-password" class="form-control" placeholder="••••••••" required style="text-align: center; font-size: 1.1rem; letter-spacing: 0.1em; height: 42px;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.5rem; display: block; text-align: center;">Use password <strong>admin123</strong> to unlock.</span>
+        </div>
+        <button type="submit" class="btn btn-primary" style="height: 42px; font-weight: 700; width: 100%; justify-content: center; margin-top: 0.5rem;">
+          Unlock Console
+        </button>
+      </form>
+
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1rem; margin-bottom: 1rem;">
+        <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--border-color); opacity: 0.5;">
+        <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">or</span>
+        <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--border-color); opacity: 0.5;">
+      </div>
+
+      <!-- Google Sign In Button -->
+      <button type="button" id="google-signin-btn" class="btn btn-secondary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.75rem; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); color: var(--text-main); cursor: pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Google Account Chooser (Simulated / Configurable) -->
+  <div class="modal-overlay" id="modal-google-chooser" style="z-index: 1100;">
+    <div class="modal-content" style="max-width: 380px; padding: 1.75rem; background: #0f1322; border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin: auto;">
+      <button class="modal-close" id="close-google-chooser-modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 0.5rem; margin-left: auto; margin-right: auto; display: block;">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <h3 style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">Sign in with Google</h3>
+        <p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 0.15rem;">to continue to <strong style="color: var(--primary);">KumiteMaster Portal</strong></p>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <!-- Account option 1 -->
+        <div class="google-account-row" id="google-acc-barun" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); cursor: pointer; transition: var(--transition-smooth);" onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.borderColor='var(--primary)';" onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='var(--border-color)';">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; font-size: 0.95rem;">B</div>
+          <div style="line-height: 1.2; text-align: left;">
+            <span style="font-weight: 700; font-size: 0.85rem; display: block; color: var(--text-main);">Barun Assam Karate</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">barun.aksa@gmail.com</span>
+          </div>
+        </div>
+        
+        <!-- Account option 2 -->
+        <div class="google-account-row" id="google-acc-guest" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); cursor: pointer; transition: var(--transition-smooth);" onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.borderColor='var(--primary)';" onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='var(--border-color)';">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; font-size: 0.95rem;">G</div>
+          <div style="line-height: 1.2; text-align: left;">
+            <span style="font-weight: 700; font-size: 0.85rem; display: block; color: var(--text-main);">Guest Tester</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">tester@gmail.com</span>
+          </div>
+        </div>
+      </div>
+      
+      <div style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; border-top: 1px solid var(--border-color); padding-top: 0.75rem; text-align: center;">
+        To connect your real Google OAuth project, configure the official Google SDK (GSI) with your Google Client ID.
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Bracket Export Choices -->
+  <div class="modal-overlay" id="modal-bracket-export-choices">
+    <div class="modal-content" style="max-width: 550px;">
+      <button class="modal-close" id="close-bracket-export-modal" onclick="document.getElementById('modal-bracket-export-choices').classList.remove('active')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header" style="text-align: center; margin-bottom: 1.5rem;">
+        <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-weight: 800; font-size: 0.72rem; text-transform: uppercase; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); letter-spacing: 0.05em; display: inline-block; margin-bottom: 0.5rem;">Export Tournament Brackets</span>
+        <h2>Select JPG Export Format</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Choose the image format best suited for printing or sharing draw sheets.</p>
+      </div>
+
+      <div class="export-choices-grid" style="display: flex; flex-direction: column; gap: 1rem;">
+        
+        <!-- Choice 1: Selected Division draw sheet (Landscape A4 JPG) -->
+        <div class="export-choice-card" id="export-btn-bracket-jpg" style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; border-radius: var(--radius-lg); background: rgba(16, 185, 129, 0.05); border: 2px solid rgba(16, 185, 129, 0.4); cursor: pointer; transition: var(--transition-smooth);">
+          <div class="choice-icon" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #34d399; font-size: 1.5rem;">🖼️</div>
+          <div style="flex-grow: 1; text-align: left;">
+            <span style="font-weight: 700; font-size: 0.95rem; display: block; color: var(--text-main); margin-bottom: 0.15rem;">Selected Division draw sheet (Landscape A4 JPG)</span>
+            <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; display: block;">Downloads the current division's bracket tree directly as a high-quality JPG image. Perfect for direct printing or sharing offline!</span>
+          </div>
+        </div>
+
+        <!-- Choice 2: Bulk Download All Brackets (JPG Pack - 1 Click) -->
+        <div class="export-choice-card" id="export-btn-bulk-jpg" style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; border-radius: var(--radius-lg); background: rgba(245, 158, 11, 0.05); border: 2px solid rgba(245, 158, 11, 0.4); cursor: pointer; transition: var(--transition-smooth);">
+          <div class="choice-icon" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #f59e0b; font-size: 1.5rem;">🗂️</div>
+          <div style="flex-grow: 1; text-align: left;">
+            <span style="font-weight: 700; font-size: 0.95rem; display: block; color: var(--text-main); margin-bottom: 0.15rem;">Download All Brackets (JPG Pack - 1 Click)</span>
+            <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; display: block;">Renders and downloads every active division bracket as an individual high-definition JPG image file in a single batch click.</span>
+          </div>
+        </div>
+
+      </div>
+
+      </div>
+      
+      <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <button class="btn btn-secondary" onclick="document.getElementById('modal-bracket-export-choices').classList.remove('active')" style="height: 38px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Google Map Location Picker -->
+  <div class="modal-overlay" id="modal-location-map">
+    <div class="modal-content" style="max-width: 800px; padding: 1.5rem; background: rgba(13, 17, 23, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--border-color);">
+      <button class="modal-close" id="close-location-map-modal" onclick="document.getElementById('modal-location-map').classList.remove('active')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="modal-header" style="margin-bottom: 1rem;">
+        <span style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-weight: 800; font-size: 0.72rem; text-transform: uppercase; padding: 0.35rem 0.8rem; border-radius: var(--radius-sm); letter-spacing: 0.05em; display: inline-block; margin-bottom: 0.5rem;">Interactive Map Selector</span>
+        <h2 style="margin: 0; font-family: var(--font-title); font-size: 1.5rem; color: var(--text-main);">Select Event Location from Google Map</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Type an address to search, drag the map, and click anywhere to automatically catch the address.</p>
+      </div>
+
+      <!-- Search Box inside Modal -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <input type="text" id="map-search-input" class="form-control" placeholder="Type city, stadium, or venue name to search..." style="margin: 0; height: 42px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: var(--text-main);">
+        <button type="button" class="btn btn-primary" id="map-search-btn" style="height: 42px; min-width: 100px;">🔍 Search</button>
+      </div>
+
+      <!-- Leaflet Map Container -->
+      <div id="location-picker-map" style="width: 100%; height: 400px; border-radius: var(--radius-md); border: 1px solid var(--border-color); overflow: hidden; background: rgba(0,0,0,0.25); margin-bottom: 1rem; position: relative; z-index: 1;"></div>
+
+      <!-- Currently Selected Address Info -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem;">
+        <span style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--accent); letter-spacing: 0.05em;">📍 Caught Address Details</span>
+        <div id="map-selected-address-text" style="font-size: 0.9rem; font-weight: 600; color: var(--text-main); line-height: 1.4; word-break: break-word;">Click anywhere on the map to catch the location address.</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-location-map').classList.remove('active')" style="height: 38px;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-map-location" style="height: 38px; min-width: 150px;" disabled>Confirm Location</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Holder -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App Core JS -->
+  <script src="app.js"></script>
+</body>
+</html>
